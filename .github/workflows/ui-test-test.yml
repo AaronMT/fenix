@@ -1,0 +1,40 @@
+name: "Run Instrumentation Tests on Android Emulator"
+
+on:
+  push:
+    branches: [ gha-ui-test-test ]
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        api-level: [28]
+        target: [google_apis]
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: x86_64
+          profile: pixel_2
+          script:
+            "./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=\
+            org.mozilla.fenix.ui.NavigationToolbarTest#visitURLTest,\
+            org.mozilla.fenix.ui.HistoryTest#visitedUrlHistoryTest,\
+            org.mozilla.fenix.ui.SmokeTest#openMainMenuSettingsItemTest,\
+            org.mozilla.fenix.ui.SmokeTest#toggleSearchSuggestions,\
+            org.mozilla.fenix.ui.SmokeTest#deleteCollectionTest,\
+            org.mozilla.fenix.ui.SmokeTest#noHistoryInPrivateBrowsingTest,\
+            org.mozilla.fenix.ui.NoNetworkAccessStartupTests#noNetworkConnectionStartupTest"
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-report
+          path: app/build/reports
